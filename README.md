@@ -1,0 +1,1 @@
+# domoticz-python-melcloud
