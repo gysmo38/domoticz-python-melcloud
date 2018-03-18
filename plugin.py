@@ -3,6 +3,7 @@
 # Version: 0.6
 #   
 # Release Notes:
+# v0.7.1: Correct bug with power on and power off
 # v0.7 : Use builtin https support to avoid urllib segmentation fault on binaries
 # v0.6.1 : Change Update function to not crash with RPI
 # v0.6 : Rewrite of the module to be easier to maintain
@@ -141,7 +142,7 @@ class BasePlugin:
                         unit['vaneH'] = response['VaneHorizontal']
                         unit['vaneV'] = response['VaneVertical']
                         unit['next_comm'] = response['NextCommunication']
-                        Domoticz.Log("Heartbeat unit info: "+str(unit))
+                        Domoticz.Debug("Heartbeat unit info: "+str(unit))
                         self.domoticz_sync_switchs(unit)
             elif(self.melcloud_state == "SET"):
                 Domoticz.Log("Next update for command: " + response["NextCommunication"])
@@ -184,6 +185,9 @@ class BasePlugin:
                 Domoticz.Log("Set to Dry the unit "+current_unit['name'])
                 Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 11)
             if(Level != 0):
+                flag = 1
+                current_unit['power'] = 'true'
+                self.melcloud_set(current_unit,flag)
                 flag = 6
                 current_unit['power'] = 'true'
                 current_unit['op_mode'] = self.domoticz_levels['mode'][str(Level)]
@@ -194,18 +198,7 @@ class BasePlugin:
         elif(switch_type == 'Fan'):
             flag = 8
             current_unit['set_fan'] = self.domoticz_levels['fan'][str(Level)]
-            if(Level == 0):
-                Domoticz.Log("Change FAN  to Level 1 for "+current_unit['name'])
-            elif(Level == 10):
-                Domoticz.Log("Change FAN  to Level 2 for "+current_unit['name'])
-            elif(Level == 20):
-                Domoticz.Log("Change FAN  to Level 3 for "+current_unit['name'])
-            elif(Level == 30):
-                Domoticz.Log("Change FAN  to Level 4 for "+current_unit['name'])
-            elif(Level == 40):
-                Domoticz.Log("Change FAN  to Silence for "+current_unit['name'])
-            elif(Level == 50):
-                Domoticz.Log("Change FAN  to Auto for "+current_unit['name'])
+            Domoticz.Log("Change FAN  to value {0} for {1} ".format(self.domoticz_levels['temp'][str(Level)],current_unit['name']))
             Devices[Unit].Update(nValue = Devices[Unit].nValue,sValue =  str(Level))
         elif(switch_type == 'Temp'):
             flag = 4
@@ -218,38 +211,12 @@ class BasePlugin:
         elif(switch_type == 'Vane Horizontal'):
             flag = 256
             current_unit['vaneH'] = self.domoticz_levels['vaneH'][str(Level)]
-            if(Level == 0):                
-                Domoticz.Debug("Change Vane Horizontal to Level 1 for "+current_unit['name'])
-            elif(Level == 10):
-                Domoticz.Debug("Change Vane Horizontal to Level 2 for "+current_unit['name'])
-            elif(Level == 20):
-                Domoticz.Debug("Change Vane Horizontal to Level 3 for "+current_unit['name'])
-            elif(Level == 30):
-                Domoticz.Debug("Change Vane Horizontal to Level 4 for "+current_unit['name'])
-            elif(Level == 40):
-                Domoticz.Debug("Change Vane Horizontal to Level 5 for "+current_unit['name'])
-            elif(Level == 50):
-                Domoticz.Debug("Change Vane Horizontal to Swing for "+current_unit['name'])
-            elif(Level == 60):
-                Domoticz.Debug("Change Vane Horizontal to Auto for "+current_unit['name'])
+            Domoticz.Debug("Change Vane Horizontal to value {0} for {1}".format(self.domoticz_levels['vaneH'][str(Level)],current_unit['name']))
             Devices[Unit].Update(Devices[Unit].nValue, str(Level))
         elif(switch_type == 'Vane Vertical'):
             flag = 16
             current_unit['vaneV'] = self.domoticz_levels['vaneV'][str(Level)]
-            if(Level == 0):
-                Domoticz.Debug("Change Vane Vertical to Level 1 for "+current_unit['name'])
-            elif(Level == 10):
-                Domoticz.Debug("Change Vane Vertical to Level 2 for "+current_unit['name'])
-            elif(Level == 20):
-                Domoticz.Debug("Change Vane Vertical to Level 3 for "+current_unit['name'])
-            elif(Level == 30):
-                Domoticz.Debug("Change Vane Vertical to Level 4 for "+current_unit['name'])
-            elif(Level == 40):
-                Domoticz.Debug("Change Vane Vertical to Level 5 for "+current_unit['name'])
-            elif(Level == 50):
-                Domoticz.Debug("Change Vane Vertical to Swing for "+current_unit['name'])
-            elif(Level == 60):
-                Domoticz.Debug("Change Vane Vertical to Auto for "+current_unit['name'])
+            Domoticz.Debug("Change Vane Vertical to value {0} for {1}".format(self.domoticz_levels['vaneV'][str(Level)],current_unit['name']))
             Devices[Unit].Update(Devices[Unit].nValue, str(Level))
         else:
             Domoticz.Log("Device not found")
@@ -407,5 +374,3 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
-
-
