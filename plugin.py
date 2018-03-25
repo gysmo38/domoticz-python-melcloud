@@ -1,8 +1,9 @@
 # MELCloud Plugin
 # Author:     Gysmo, 2017
-# Version: 0.6
+# Version: 0.7
 #   
 # Release Notes:
+# v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text 
 # v0.7.1: Correct bug with power on and power off
 # v0.7 : Use builtin https support to avoid urllib segmentation fault on binaries
 # v0.6.1 : Change Update function to not crash with RPI
@@ -18,10 +19,39 @@
 #        Usefull if you use your Mitsubishi remote
 # v0.1 : Initial release
 """
-<plugin key="MELCloud" version="0.7" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
+<plugin key="MELCloud" version="0.7.2" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
     <params>
         <param field="Username" label="Email" width="200px" required="true" />
         <param field="Password" label="Password" width="200px" required="true" />
+        <param field="Mode1" label="GMT Offset" width="75 px">
+            <options>
+                <option label="-12" value="-12"/>
+                <option label="-11" value="-11"/>
+                <option label="-10" value="-10"/>
+                <option label="-9" value="-9"/>
+                <option label="-8" value="-8"/>
+                <option label="-7" value="-7"/>
+                <option label="-6" value="-6"/>
+                <option label="-5" value="-5"/>
+                <option label="-4" value="-4"/>
+                <option label="-3" value="-3"/>
+                <option label="-2" value="-2"/>
+                <option label="-1" value="-1"/>
+                <option label="0" value="0" default="true" />
+                <option label="+1" value="+1"/>
+                <option label="+2" value="+2"/>
+                <option label="+3" value="+3"/>
+                <option label="+4" value="+4"/>
+                <option label="+5" value="+5"/>
+                <option label="+6" value="+6"/>
+                <option label="+7" value="+7"/>
+                <option label="+8" value="+8"/>
+                <option label="+9" value="+9"/>
+                <option label="+10" value="+10"/>
+                <option label="+11" value="+11"/>
+                <option label="+12" value="+12"/>
+            </options>
+        </param>
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="True" value="Debug"/>
@@ -141,11 +171,29 @@ class BasePlugin:
                         unit['set_fan'] = response['SetFanSpeed']
                         unit['vaneH'] = response['VaneHorizontal']
                         unit['vaneV'] = response['VaneVertical']
-                        unit['next_comm'] = response['NextCommunication']
+                        unit['next_comm'] = False
                         Domoticz.Debug("Heartbeat unit info: "+str(unit))
                         self.domoticz_sync_switchs(unit)
             elif(self.melcloud_state == "SET"):
-                Domoticz.Log("Next update for command: " + response["NextCommunication"])
+                for unit in self.list_units:
+                    if(unit['id'] == response['DeviceID']):
+                       date,time = response['NextCommunication'].split("T")
+                       hours,minutes,sec = time.split(":")
+                       sign = Parameters["Mode1"][0]
+                       value = Parameters["Mode1"][1:]
+                       Domoticz.Debug("TIME OFFSSET :" + sign + value)
+                       if(sign == "-"):
+                            hours = int(hours) - int(value)
+                            if(hours < 0):
+                                hours = hours + 24
+                       else:
+                            hours = int(hours) + int(value)
+                            if(hours > 24):
+                                hours = hours - 24
+                       next_comm = date + " " + str(hours) + ":"+ minutes + ":" + sec
+                       unit['next_comm'] = "Update for last command at "+next_comm
+                       Domoticz.Log("Next update for command: " + next_comm)
+                       self.domoticz_sync_switchs(unit)
             else:
                 Domoticz.Log("State not implemented:" + self.melcloud_state)
            
@@ -226,8 +274,10 @@ class BasePlugin:
     def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
         Domoticz.Log("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
-    def onDisconnect(self):
-        Domoticz.Log("onDisconnect called")
+    def onDisconnect(self,Connection):
+        self.melcloud_state = "Not Ready"
+        Domoticz.Log("MELCloud has disconnected")
+        self.melcloud_conn.Connect()
 
     def onHeartbeat(self):
         Domoticz.Log("Current MEL Cloud Key ID:"+self.melcloud_key)
@@ -288,14 +338,9 @@ class BasePlugin:
         melcloud_unit['set_fan'] = ""
         melcloud_unit['vaneH'] = ""
         melcloud_unit['vaneV'] = ""
-        melcloud_unit['next_comm'] = ""
+        melcloud_unit['next_comm'] = False
         melcloud_unit['idoffset'] = idoffset
         self.list_units.append(melcloud_unit)
-
-    def melcloud_update_unit(self,meldevice,device):
-        melDevice['power'] = device['Power']
-        melDevice['opmode'] = device['OperationMode']
-        melDevice['roomtemp'] = device['RoomTemperature']
 
     def melcloud_units_init(self):
         self.melcloud_send_data(self.melcloud_urls["list_unit"],None,"UNITS_INIT")
@@ -333,12 +378,15 @@ class BasePlugin:
         else:
             switch_value = 0
             setModeLevel = '0'
-        Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setModeLevel,Image = setPicID)
-        Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomFan)
-        Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomTemp)
-        Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneH)
-        Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneV)
-        Devices[self.list_switchs[5]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = str(unit['room_temp']))
+        if(unit['next_comm'] is not False):
+            Devices[self.list_switchs[6]["id"]+unit["idoffset"]].Update(nValue = 1,sValue = str(unit['next_comm']))
+        else:
+            Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setModeLevel,Image = setPicID)
+            Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomFan)
+            Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomTemp)
+            Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneH)
+            Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneV)
+            Devices[self.list_switchs[5]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = str(unit['room_temp']))
 
 global _plugin
 _plugin = BasePlugin()
