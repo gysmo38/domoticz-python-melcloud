@@ -1,8 +1,9 @@
 # MELCloud Plugin
 # Author:     Gysmo, 2017
-# Version: 0.7
+# Version: 0.7.3
 #   
 # Release Notes:
+# v0.7.3: Add test in login process and give message if there is some errors
 # v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text 
 # v0.7.1: Correct bug with power on and power off
 # v0.7 : Use builtin https support to avoid urllib segmentation fault on binaries
@@ -19,7 +20,7 @@
 #        Usefull if you use your Mitsubishi remote
 # v0.1 : Initial release
 """
-<plugin key="MELCloud" version="0.7.2" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
+<plugin key="MELCloud" version="0.7.3" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
     <params>
         <param field="Username" label="Email" width="200px" required="true" />
         <param field="Password" label="Password" width="200px" required="true" />
@@ -118,11 +119,11 @@ class BasePlugin:
 
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
-            Domoticz.Log("Connection to MELCloud OK")
+            Domoticz.Log("MELCloud connection OK")
             self.melcloud_state = "READY"
             self.melcloud_login()
         else:
-            Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["Address"]+":"+Parameters["Port"]+" with error: "+Description)
+            Domoticz.Log("MELCloud connection FAIL: "+Description)
 
     def onMessage(self, Connection, Data):
         Status = int(Data["Status"])
@@ -131,9 +132,17 @@ class BasePlugin:
             response = json.loads(strData)
             Domoticz.Debug("JSON REPLY: "+str(response))
             if(self.melcloud_state == "LOGIN"):
-                Domoticz.Log("Context ID: "+str(response["LoginData"]["ContextKey"]))
-                self.melcloud_key = response["LoginData"]["ContextKey"]
-                self.melcloud_units_init()             
+                if(response["ErrorId"] == None):
+                    Domoticz.Log("MELCloud login successfull");
+                    self.melcloud_key = response["LoginData"]["ContextKey"]
+                    self.melcloud_units_init()  
+                elif(response["ErrorId"] == 1):
+                    Domoticz.Log("MELCloud login fail: check login and password")
+                    self.melcloud_state = "LOGIN_FAILED"
+                else:
+                    Domoticz.Log("MELCloud failed with unknown error "+str(response["ErrorId"]))
+                    self.melcloud_state = "LOGIN_FAILED"
+           
             elif(self.melcloud_state == "UNITS_INIT"):
                 idoffset = 0
                 Domoticz.Log("Find "+str(len(response))+ " buildings")
@@ -196,7 +205,9 @@ class BasePlugin:
                        self.domoticz_sync_switchs(unit)
             else:
                 Domoticz.Log("State not implemented:" + self.melcloud_state)
-           
+        else:
+            Domoticz.Log("MELCloud receive unknonw message with error code "+Data["Status"])
+
     def onCommand(self, Unit, Command, Level, Hue):
         Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level))
         #~ Get switch function: mode, fan, temp ...
@@ -280,9 +291,10 @@ class BasePlugin:
         self.melcloud_conn.Connect()
 
     def onHeartbeat(self):
-        Domoticz.Log("Current MEL Cloud Key ID:"+self.melcloud_key)
-        for unit in self.list_units:
-            self.melcloud_get_unit_info(unit)
+        if(self.melcloud_state != "LOGIN_FAILED"):
+            Domoticz.Log("Current MEL Cloud Key ID:"+self.melcloud_key)
+            for unit in self.list_units:
+                self.melcloud_get_unit_info(unit)
 
     def melcloud_create_units(self):
         Domoticz.Log("Units infos " + str(self.list_units))
