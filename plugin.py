@@ -3,6 +3,7 @@
 # Version: 0.7.3
 #   
 # Release Notes:
+# v0.7.4: Sometimes update fail. Update function sync to avoid this
 # v0.7.3: Add test in login process and give message if there is some errors
 # v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text 
 # v0.7.1: Correct bug with power on and power off
@@ -292,7 +293,7 @@ class BasePlugin:
 
     def onHeartbeat(self):
         if(self.melcloud_state != "LOGIN_FAILED"):
-            Domoticz.Log("Current MEL Cloud Key ID:"+self.melcloud_key)
+            Domoticz.Debug("Current MEL Cloud Key ID:"+self.melcloud_key)
             for unit in self.list_units:
                 self.melcloud_get_unit_info(unit)
 
@@ -367,37 +368,42 @@ class BasePlugin:
         self.melcloud_send_data(url,None,"UNIT_INFO")
         
     def domoticz_sync_switchs(self,unit):
-        for level, mode in self.domoticz_levels["mode"].items():
-            if(mode == unit['op_mode']):
-                setModeLevel = level
-        for level, pic in self.domoticz_levels["mode_pic"].items():
-            if(level == setModeLevel):
-                setPicID = pic                
-        for level, fan in self.domoticz_levels["fan"].items():
-            if(fan == unit['set_fan']):
-                setDomFan = level
-        for level, temp in self.domoticz_levels["temp"].items():
-            if(temp == unit['set_temp']):
-                setDomTemp = level
-        for level, vaneH in self.domoticz_levels["vaneH"].items():
-            if(vaneH == unit['vaneH']):
-                setDomVaneH = level
-        for level, vaneV in self.domoticz_levels["vaneV"].items():
-            if(vaneV == unit['vaneV']):
-                setDomVaneV = level
-        if(unit['power']):
-            switch_value = 1
-        else:
-            switch_value = 0
-            setModeLevel = '0'
+        #Default value in case of problem
+        setDomFan = 0;
+        setDomTemp = 0;
+        setDomVaneH = 0;
+        setDomVaneV = 0;
         if(unit['next_comm'] is not False):
             Devices[self.list_switchs[6]["id"]+unit["idoffset"]].Update(nValue = 1,sValue = str(unit['next_comm']))
         else:
+            if(unit['power']):
+                switch_value = 1
+                for level, mode in self.domoticz_levels["mode"].items():
+                    if(mode == unit['op_mode']):
+                        setModeLevel = level
+            else:
+                switch_value = 0
+                setModeLevel = '0'
+            for level, pic in self.domoticz_levels["mode_pic"].items():
+                if(level == setModeLevel):
+                    setPicID = pic                
             Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setModeLevel,Image = setPicID)
-            Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomFan)
-            Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomTemp)
-            Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneH)
-            Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneV)
+            for level, fan in self.domoticz_levels["fan"].items():
+                if(fan == unit['set_fan']):
+                    setDomFan = level
+                    Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomFan)
+            for level, temp in self.domoticz_levels["temp"].items():
+                if(temp == unit['set_temp']):
+                    setDomTemp = level
+                    Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomTemp)
+            for level, vaneH in self.domoticz_levels["vaneH"].items():
+                if(vaneH == unit['vaneH']):
+                    setDomVaneH = level
+                    Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneH)
+            for level, vaneV in self.domoticz_levels["vaneV"].items():
+                if(vaneV == unit['vaneV']):
+                    setDomVaneV = level
+                    Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneV)
             Devices[self.list_switchs[5]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = str(unit['room_temp']))
 
 global _plugin
