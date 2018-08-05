@@ -3,6 +3,7 @@
 # Version: 0.7.3
 #   
 # Release Notes:
+# v0.7.5: Fix somes bugs and improve https connection
 # v0.7.4: Sometimes update fail. Update function sync to avoid this
 # v0.7.3: Add test in login process and give message if there is some errors
 # v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text 
@@ -54,10 +55,16 @@
                 <option label="+12" value="+12"/>
             </options>
         </param>
-        <param field="Mode6" label="Debug" width="75px">
+        <param field="Mode6" label="Debug" width="150px">
             <options>
-                <option label="True" value="Debug"/>
-                <option label="False" value="Normal"  default="true" />
+                <option label="None" value="0"  default="true" />
+                <option label="Python Only" value="2"/>
+                <option label="Basic Debugging" value="62"/>
+                <option label="Basic+Messages" value="126"/>
+                <option label="Connections Only" value="16"/>
+                <option label="Connections+Python" value="18"/>
+                <option label="Connections+Queue" value="144"/>
+                <option label="All" value="-1"/>
             </options>
         </param>
     </params>
@@ -101,6 +108,7 @@ class BasePlugin:
     domoticz_levels["vaneH"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":12,"60":0}
     domoticz_levels["vaneV"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":7,"60":0}
     
+    runAgain = 6
     enabled = False
     
     def __init__(self):
@@ -292,10 +300,20 @@ class BasePlugin:
         self.melcloud_conn.Connect()
 
     def onHeartbeat(self):
-        if(self.melcloud_state != "LOGIN_FAILED"):
-            Domoticz.Debug("Current MEL Cloud Key ID:"+self.melcloud_key)
-            for unit in self.list_units:
-                self.melcloud_get_unit_info(unit)
+        if (self.melcloud_conn != None and (self.melcloud_conn.Connecting() or self.melcloud_conn.Connected())):
+            if(self.melcloud_state != "LOGIN_FAILED"):
+                Domoticz.Debug("Current MEL Cloud Key ID:"+str(self.melcloud_key))
+                for unit in self.list_units:
+                    self.melcloud_get_unit_info(unit)
+        else:
+            self.runAgain = self.runAgain - 1
+            if self.runAgain <= 0:
+                if (self.melcloud_conn == None):
+                    self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP", Protocol="HTTPS", Address=self.melcloud_baseurl, Port=self.melcloud_port)
+                self.melcloud_conn.Connect()
+                self.runAgain = 6
+            else:
+                Domoticz.Debug("MELCloud https failed. Reconnected in "+str(self.runAgain)+" heartbeats.")
 
     def melcloud_create_units(self):
         Domoticz.Log("Units infos " + str(self.list_units))
