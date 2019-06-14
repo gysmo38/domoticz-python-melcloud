@@ -1,12 +1,13 @@
 # MELCloud Plugin
 # Author:     Gysmo, 2017
-# Version: 0.7.3
-#   
+# Version: 0.7.6
+#
 # Release Notes:
+# v0.7.6: Fix Auto Mode added
 # v0.7.5: Fix somes bugs and improve https connection
 # v0.7.4: Sometimes update fail. Update function sync to avoid this
 # v0.7.3: Add test in login process and give message if there is some errors
-# v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text 
+# v0.7.2: Correct bug for onDisconnect, add timeoffset and add update time for last command in switch text
 # v0.7.1: Correct bug with power on and power off
 # v0.7 : Use builtin https support to avoid urllib segmentation fault on binaries
 # v0.6.1 : Change Update function to not crash with RPI
@@ -22,7 +23,7 @@
 #        Usefull if you use your Mitsubishi remote
 # v0.1 : Initial release
 """
-<plugin key="MELCloud" version="0.7.3" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
+<plugin key="MELCloud" version="0.7.6" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
     <params>
         <param field="Username" label="Email" width="200px" required="true" />
         <param field="Password" label="Password" width="200px" required="true" />
@@ -76,41 +77,41 @@ import time
 import json
 
 class BasePlugin:
-    
+
     melcloud_conn = None
     melcloud_baseurl = "app.melcloud.com"
     melcloud_port = "443"
     melcloud_key = None
     melcloud_state = "Not Ready"
-    
+
     melcloud_urls = {}
     melcloud_urls["login"] = "/Mitsubishi.Wifi.Client/Login/ClientLogin"
     melcloud_urls["list_unit"] = "/Mitsubishi.Wifi.Client/User/ListDevices"
     melcloud_urls["set_unit"] = "/Mitsubishi.Wifi.Client/Device/SetAta"
     melcloud_urls["unit_info"] = "/Mitsubishi.Wifi.Client/Device/Get"
-    
+
     list_units = []
-    
+
     list_switchs = []
-    list_switchs.append({"id":1,"name":"Mode","typename":"Selector Switch","image":16,"levels":"Off|Warm|Cold|Vent|Dry"})
+    list_switchs.append({"id":1,"name":"Mode","typename":"Selector Switch","image":16,"levels":"Off|Warm|Cold|Vent|Dry|Auto"})
     list_switchs.append({"id":2,"name":"Fan","typename":"Selector Switch","image":7,"levels":"Level1|Level2|Level3|Level4|Level5|Auto|Silence"})
     list_switchs.append({"id":3,"name":"Temp","typename":"Selector Switch","image":15,"levels":"16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31"})
     list_switchs.append({"id":4,"name":"Vane Horizontal","typename":"Selector Switch","image":7,"levels":"1|2|3|4|5|Swing|Auto"})
     list_switchs.append({"id":5,"name":"Vane Vertical","typename":"Selector Switch","image":7,"levels":"1|2|3|4|5|Swing|Auto"})
     list_switchs.append({"id":6,"name":"Room Temp","typename":"Temperature"})
     list_switchs.append({"id":7,"name":"Unit Infos","typename":"Text"})
-    
+
     domoticz_levels = {}
-    domoticz_levels["mode"] = {"0":0,"10":1,"20":3,"30":7,"40":2}
+    domoticz_levels["mode"] = {"0":0,"10":1,"20":3,"30":7,"40":2,"50":8}
     domoticz_levels["mode_pic"] = {"0":9,"10":15,"20":16,"30":7,"40":11}
     domoticz_levels["fan"] = {"0":1,"10":2,"20":3,"30":4,"40":255,"50":0,"60":1}
     domoticz_levels["temp"] = {"0":16,"10":17,"20":18,"30":19,"40":20,"50":21,"60":22,"70":23,"80":24,"90":25,"100":26,"110":27,"120":28,"130":29,"140":30,"150":31}
     domoticz_levels["vaneH"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":12,"60":0}
     domoticz_levels["vaneV"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":7,"60":0}
-    
+
     runAgain = 6
     enabled = False
-    
+
     def __init__(self):
         return
 
@@ -144,14 +145,14 @@ class BasePlugin:
                 if(response["ErrorId"] == None):
                     Domoticz.Log("MELCloud login successfull");
                     self.melcloud_key = response["LoginData"]["ContextKey"]
-                    self.melcloud_units_init()  
+                    self.melcloud_units_init()
                 elif(response["ErrorId"] == 1):
                     Domoticz.Log("MELCloud login fail: check login and password")
                     self.melcloud_state = "LOGIN_FAILED"
                 else:
                     Domoticz.Log("MELCloud failed with unknown error "+str(response["ErrorId"]))
                     self.melcloud_state = "LOGIN_FAILED"
-           
+
             elif(self.melcloud_state == "UNITS_INIT"):
                 idoffset = 0
                 Domoticz.Log("Find "+str(len(response))+ " buildings")
@@ -159,7 +160,7 @@ class BasePlugin:
                     Domoticz.Log("Find "+str(len(building["Structure"]["Areas"]))+ " areas in building "+building["Name"])
                     Domoticz.Log("Find "+str(len(building["Structure"]["Floors"]))+ " floors in building "+building["Name"])
                     Domoticz.Log("Find "+str(len(building["Structure"]["Devices"]))+ " devices  in building "+building["Name"])
-                    #Search in devices        
+                    #Search in devices
                     for device in building["Structure"]["Devices"]:
                         self.melcloud_add_unit(device,idoffset)
                         idoffset += len(self.list_switchs)
@@ -175,7 +176,7 @@ class BasePlugin:
                             idoffset += len(self.list_switchs)
                         for area in floor["Areas"]:
                             for device in area["Devices"]:
-                                self.melcloud_add_unit(device,idoffset)    
+                                self.melcloud_add_unit(device,idoffset)
                                 idoffset += len(self.list_switchs)
                 self.melcloud_create_units()
             elif(self.melcloud_state == "UNIT_INFO"):
@@ -239,7 +240,8 @@ class BasePlugin:
                 Devices[2+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 1].sValue))
                 Devices[3+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 2].sValue))
                 Devices[4+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 3].sValue))
-                Devices[5+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 4].sValue)) 
+                Devices[5+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 4].sValue))
+                Devices[6+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 5].sValue))
             elif(Level == 10):
                 Domoticz.Log("Set to WARM the unit "+current_unit['name'])
                 Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 15)
@@ -252,6 +254,9 @@ class BasePlugin:
             elif(Level == 40):
                 Domoticz.Log("Set to Dry the unit "+current_unit['name'])
                 Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 11)
+            elif(Level == 50):
+                Domoticz.Log("Set to Auto the unit "+current_unit['name'])
+                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 11)
             if(Level != 0):
                 flag = 1
                 current_unit['power'] = 'true'
@@ -263,6 +268,7 @@ class BasePlugin:
                 Devices[3+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 2].sValue))
                 Devices[4+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 3].sValue))
                 Devices[5+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 4].sValue))
+                Devices[6+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 5].sValue))
         elif(switch_type == 'Fan'):
             flag = 8
             current_unit['set_fan'] = self.domoticz_levels['fan'][str(Level)]
@@ -344,17 +350,17 @@ class BasePlugin:
         else :
             headers = { 'Content-Type': 'application/x-www-form-urlencoded;', \
                         'Host': self.melcloud_baseurl, \
-                        'User-Agent':'Domoticz/1.0'}              
+                        'User-Agent':'Domoticz/1.0'}
             self.melcloud_conn.Send({'Verb':'POST', 'URL':url,'Headers': headers, 'Data': values})
         self.melcloud_state = state
         return True
 
-    
+
     def melcloud_login(self):
         data = "AppVersion=1.9.3.0&Email={0}&Password={1}".format(Parameters["Username"],Parameters["Password"])
         self.melcloud_send_data(self.melcloud_urls["login"],data,"LOGIN")
         return True
-    
+
     def melcloud_add_unit(self,device,idoffset):
         melcloud_unit = {}
         melcloud_unit['name'] = device["DeviceName"]
@@ -380,11 +386,11 @@ class BasePlugin:
         post_fields = "Power={0}&DeviceID={1}&OperationMode={2}&SetTemperature={3}&SetFanSpeed={4}&VaneHorizontal={5}&VaneVertical={6}&EffectiveFlags={7}&HasPendingCommand=true".format(unit['power'],unit['id'],unit['op_mode'],unit['set_temp'],unit['set_fan'],unit['vaneH'],unit['vaneV'],flag)
         Domoticz.Debug("SET COMMAND SEND {0}".format(post_fields))
         self.melcloud_send_data(self.melcloud_urls["set_unit"],post_fields,"SET")
-     
+
     def melcloud_get_unit_info(self,unit):
         url = self.melcloud_urls["unit_info"]+"?id="+str(unit['id'])+"&buildingID="+str(unit['building_id'])
         self.melcloud_send_data(url,None,"UNIT_INFO")
-        
+
     def domoticz_sync_switchs(self,unit):
         #Default value in case of problem
         setDomFan = 0;
@@ -404,7 +410,7 @@ class BasePlugin:
                 setModeLevel = '0'
             for level, pic in self.domoticz_levels["mode_pic"].items():
                 if(level == setModeLevel):
-                    setPicID = pic                
+                    setPicID = pic
             Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setModeLevel,Image = setPicID)
             for level, fan in self.domoticz_levels["fan"].items():
                 if(fan == unit['set_fan']):
