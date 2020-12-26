@@ -307,7 +307,7 @@ class BasePlugin:
     def onDisconnect(self,Connection):
         self.melcloud_state = "Not Ready"
         Domoticz.Log("MELCloud has disconnected")
-        self.melcloud_conn.Connect()
+        self.runAgain = 1
 
     def onHeartbeat(self):
         if (self.melcloud_conn != None and (self.melcloud_conn.Connecting() or self.melcloud_conn.Connected())):
