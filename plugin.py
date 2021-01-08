@@ -76,6 +76,7 @@ import Domoticz
 import time
 import json
 
+
 class BasePlugin:
 
     melcloud_conn = None
@@ -93,21 +94,23 @@ class BasePlugin:
     list_units = []
 
     list_switchs = []
-    list_switchs.append({"id":1,"name":"Mode","typename":"Selector Switch","image":16,"levels":"Off|Warm|Cold|Vent|Dry|Auto"})
-    list_switchs.append({"id":2,"name":"Fan","typename":"Selector Switch","image":7,"levels":"Level1|Level2|Level3|Level4|Level5|Auto|Silence"})
-    list_switchs.append({"id":3,"name":"Temp","typename":"Selector Switch","image":15,"levels":"16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31"})
-    list_switchs.append({"id":4,"name":"Vane Horizontal","typename":"Selector Switch","image":7,"levels":"1|2|3|4|5|Swing|Auto"})
-    list_switchs.append({"id":5,"name":"Vane Vertical","typename":"Selector Switch","image":7,"levels":"1|2|3|4|5|Swing|Auto"})
-    list_switchs.append({"id":6,"name":"Room Temp","typename":"Temperature"})
-    list_switchs.append({"id":7,"name":"Unit Infos","typename":"Text"})
+    list_switchs.append({"id": 1, "name": "Mode", "typename": "Selector Switch", "image": 16, "levels": "Off|Warm|Cold|Vent|Dry|Auto"})
+    list_switchs.append({"id": 2, "name": "Fan", "typename": "Selector Switch", "image": 7, "levels": "Level1|Level2|Level3|Level4|Level5|Auto|Silence"})
+    list_switchs.append({"id": 3, "name": "Temp", "typename": "Selector Switch", "image": 15, "levels": "16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31"})
+    list_switchs.append({"id": 4, "name": "Vane Horizontal", "typename": "Selector Switch", "image": 7, "levels": "1|2|3|4|5|Swing|Auto"})
+    list_switchs.append({"id": 5, "name": "Vane Vertical", "typename": "Selector Switch", "image": 7, "levels": "1|2|3|4|5|Swing|Auto"})
+    list_switchs.append({"id": 6, "name": "Room Temp", "typename": "Temperature"})
+    list_switchs.append({"id": 7, "name": "Unit Infos", "typename": "Text"})
 
     domoticz_levels = {}
-    domoticz_levels["mode"] = {"0":0,"10":1,"20":3,"30":7,"40":2,"50":8}
-    domoticz_levels["mode_pic"] = {"0":9,"10":15,"20":16,"30":7,"40":11}
-    domoticz_levels["fan"] = {"0":1,"10":2,"20":3,"30":4,"40":255,"50":0,"60":1}
-    domoticz_levels["temp"] = {"0":16,"10":17,"20":18,"30":19,"40":20,"50":21,"60":22,"70":23,"80":24,"90":25,"100":26,"110":27,"120":28,"130":29,"140":30,"150":31}
-    domoticz_levels["vaneH"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":12,"60":0}
-    domoticz_levels["vaneV"] = {"0":1,"10":2,"20":3,"30":4,"40":5,"50":7,"60":0}
+    domoticz_levels["mode"] = {"0": 0, "10": 1, "20": 3, "30": 7, "40": 2, "50": 8}
+    domoticz_levels["mode_pic"] = {"0": 9, "10": 15, "20": 16, "30": 7, "40": 11}
+    domoticz_levels["fan"] = {"0": 1, "10": 2, "20": 3, "30": 4, "40": 255, "50": 0, "60": 1}
+    domoticz_levels["temp"] = {"0": 16, "10": 17, "20": 18, "30": 19, "40": 20, "50": 21,
+                               "60": 22, "70": 23, "80": 24, "90": 25, "100": 26,
+                               "110": 27, "120": 28, "130": 29, "140": 30, "150": 31}
+    domoticz_levels["vaneH"] = {"0": 1, "10": 2, "20": 3, "30": 4, "40": 5, "50": 12, "60": 0}
+    domoticz_levels["vaneV"] = {"0": 1, "10": 2, "20": 3, "30": 4, "40": 5, "50": 7, "60": 0}
 
     runAgain = 6
     enabled = False
@@ -142,8 +145,8 @@ class BasePlugin:
             response = json.loads(strData)
             Domoticz.Debug("JSON REPLY: "+str(response))
             if(self.melcloud_state == "LOGIN"):
-                if(response["ErrorId"] == None):
-                    Domoticz.Log("MELCloud login successfull");
+                if(response["ErrorId"] is None):
+                    Domoticz.Log("MELCloud login successfull")
                     self.melcloud_key = response["LoginData"]["ContextKey"]
                     self.melcloud_units_init()
                 elif(response["ErrorId"] == 1):
@@ -155,28 +158,28 @@ class BasePlugin:
 
             elif(self.melcloud_state == "UNITS_INIT"):
                 idoffset = 0
-                Domoticz.Log("Find "+str(len(response))+ " buildings")
+                Domoticz.Log("Find " + str(len(response)) + " buildings")
                 for building in response:
-                    Domoticz.Log("Find "+str(len(building["Structure"]["Areas"]))+ " areas in building "+building["Name"])
-                    Domoticz.Log("Find "+str(len(building["Structure"]["Floors"]))+ " floors in building "+building["Name"])
-                    Domoticz.Log("Find "+str(len(building["Structure"]["Devices"]))+ " devices  in building "+building["Name"])
-                    #Search in devices
+                    Domoticz.Log("Find " + str(len(building["Structure"]["Areas"])) + " areas in building "+building["Name"])
+                    Domoticz.Log("Find " + str(len(building["Structure"]["Floors"])) + " floors in building "+building["Name"])
+                    Domoticz.Log("Find " + str(len(building["Structure"]["Devices"])) + " devices  in building "+building["Name"])
+                    # Search in devices
                     for device in building["Structure"]["Devices"]:
-                        self.melcloud_add_unit(device,idoffset)
+                        self.melcloud_add_unit(device, idoffset)
                         idoffset += len(self.list_switchs)
-                    #Search in areas
+                    # Search in areas
                     for area in building["Structure"]["Areas"]:
                         for device in area["Devices"]:
-                            self.melcloud_add_unit(device,idoffset)
+                            self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
-                    #Search in floors
+                    # Search in floors
                     for floor in building["Structure"]["Floors"]:
                         for device in floor["Devices"]:
-                            self.melcloud_add_unit(device,idoffset)
+                            self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
                         for area in floor["Areas"]:
                             for device in area["Devices"]:
-                                self.melcloud_add_unit(device,idoffset)
+                                self.melcloud_add_unit(device, idoffset)
                                 idoffset += len(self.list_switchs)
                 self.melcloud_create_units()
             elif(self.melcloud_state == "UNIT_INFO"):
@@ -196,23 +199,23 @@ class BasePlugin:
             elif(self.melcloud_state == "SET"):
                 for unit in self.list_units:
                     if(unit['id'] == response['DeviceID']):
-                       date,time = response['NextCommunication'].split("T")
-                       hours,minutes,sec = time.split(":")
-                       sign = Parameters["Mode1"][0]
-                       value = Parameters["Mode1"][1:]
-                       Domoticz.Debug("TIME OFFSSET :" + sign + value)
-                       if(sign == "-"):
+                        date, time = response['NextCommunication'].split("T")
+                        hours, minutes, sec = time.split(":")
+                        sign = Parameters["Mode1"][0]
+                        value = Parameters["Mode1"][1:]
+                        Domoticz.Debug("TIME OFFSSET :" + sign + value)
+                        if(sign == "-"):
                             hours = int(hours) - int(value)
                             if(hours < 0):
                                 hours = hours + 24
-                       else:
+                        else:
                             hours = int(hours) + int(value)
                             if(hours > 24):
                                 hours = hours - 24
-                       next_comm = date + " " + str(hours) + ":"+ minutes + ":" + sec
-                       unit['next_comm'] = "Update for last command at "+next_comm
-                       Domoticz.Log("Next update for command: " + next_comm)
-                       self.domoticz_sync_switchs(unit)
+                        next_comm = date + " " + str(hours) + ":" + minutes + ":" + sec
+                        unit['next_comm'] = "Update for last command at "+next_comm
+                        Domoticz.Log("Next update for command: " + next_comm)
+                        self.domoticz_sync_switchs(unit)
             else:
                 Domoticz.Log("State not implemented:" + self.melcloud_state)
         else:
@@ -220,12 +223,12 @@ class BasePlugin:
 
     def onCommand(self, Unit, Command, Level, Hue):
         Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level))
-        #~ Get switch function: mode, fan, temp ...
+        # ~ Get switch function: mode, fan, temp ...
         switch_id = Unit
         while switch_id > 7:
             switch_id -= 7
         switch_type = self.list_switchs[switch_id-1]["name"]
-        #~ Get the unit in units array
+        # ~ Get the unit in units array
         current_unit = False
         for unit in self.list_units:
             if (unit['idoffset'] + self.list_switchs[switch_id-1]["id"]) == Unit:
@@ -236,77 +239,77 @@ class BasePlugin:
                 flag = 1
                 current_unit['power'] = 'false'
                 Domoticz.Log("Switch Off the unit "+current_unit['name'] + "with ID offset " + str(current_unit['idoffset']))
-                Devices[1+current_unit['idoffset']].Update(nValue = 0,sValue = str(Level), Image = 9)
-                Devices[2+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 1].sValue))
-                Devices[3+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 2].sValue))
-                Devices[4+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 3].sValue))
-                Devices[5+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 4].sValue))
-                Devices[6+current_unit['idoffset']].Update(nValue = 0,sValue = str(Devices[Unit + 5].sValue))
+                Devices[1+current_unit['idoffset']].Update(nValue=0, sValue=str(Level), Image=9)
+                Devices[2+current_unit['idoffset']].Update(nValue=0, sValue=str(Devices[Unit + 1].sValue))
+                Devices[3+current_unit['idoffset']].Update(nValue=0, sValue=str(Devices[Unit + 2].sValue))
+                Devices[4+current_unit['idoffset']].Update(nValue=0, sValue=str(Devices[Unit + 3].sValue))
+                Devices[5+current_unit['idoffset']].Update(nValue=0, sValue=str(Devices[Unit + 4].sValue))
+                Devices[6+current_unit['idoffset']].Update(nValue=0, sValue=str(Devices[Unit + 5].sValue))
             elif(Level == 10):
                 Domoticz.Log("Set to WARM the unit "+current_unit['name'])
-                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 15)
+                Devices[1+current_unit['idoffset']].Update(nValue=1, sValue=str(Level), Image=15)
             elif(Level == 20):
                 Domoticz.Log("Set to COLD the unit "+current_unit['name'])
-                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 16)
+                Devices[1+current_unit['idoffset']].Update(nValue=1, sValue=str(Level), Image=16)
             elif(Level == 30):
                 Domoticz.Log("Set to Vent the unit "+current_unit['name'])
-                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 7)
+                Devices[1+current_unit['idoffset']].Update(nValue=1, sValue=str(Level), Image=7)
             elif(Level == 40):
                 Domoticz.Log("Set to Dry the unit "+current_unit['name'])
-                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 11)
+                Devices[1+current_unit['idoffset']].Update(nValue=1, sValue=str(Level), Image=11)
             elif(Level == 50):
                 Domoticz.Log("Set to Auto the unit "+current_unit['name'])
-                Devices[1+current_unit['idoffset']].Update(nValue = 1,sValue = str(Level),Image = 11)
+                Devices[1+current_unit['idoffset']].Update(nValue=1, sValue=str(Level), Image=11)
             if(Level != 0):
                 flag = 1
                 current_unit['power'] = 'true'
-                self.melcloud_set(current_unit,flag)
+                self.melcloud_set(current_unit, flag)
                 flag = 6
                 current_unit['power'] = 'true'
                 current_unit['op_mode'] = self.domoticz_levels['mode'][str(Level)]
-                Devices[2+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 1].sValue))
-                Devices[3+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 2].sValue))
-                Devices[4+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 3].sValue))
-                Devices[5+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 4].sValue))
-                Devices[6+current_unit['idoffset']].Update(nValue = 1,sValue = str(Devices[Unit + 5].sValue))
+                Devices[2+current_unit['idoffset']].Update(nValue=1, sValue=str(Devices[Unit + 1].sValue))
+                Devices[3+current_unit['idoffset']].Update(nValue=1, sValue=str(Devices[Unit + 2].sValue))
+                Devices[4+current_unit['idoffset']].Update(nValue=1, sValue=str(Devices[Unit + 3].sValue))
+                Devices[5+current_unit['idoffset']].Update(nValue=1, sValue=str(Devices[Unit + 4].sValue))
+                Devices[6+current_unit['idoffset']].Update(nValue=1, sValue=str(Devices[Unit + 5].sValue))
         elif(switch_type == 'Fan'):
             flag = 8
             current_unit['set_fan'] = self.domoticz_levels['fan'][str(Level)]
-            Domoticz.Log("Change FAN  to value {0} for {1} ".format(self.domoticz_levels['temp'][str(Level)],current_unit['name']))
-            Devices[Unit].Update(nValue = Devices[Unit].nValue,sValue =  str(Level))
+            Domoticz.Log("Change FAN  to value {0} for {1} ".format(self.domoticz_levels['temp'][str(Level)], current_unit['name']))
+            Devices[Unit].Update(nValue=Devices[Unit].nValue, sValue=str(Level))
         elif(switch_type == 'Temp'):
             flag = 4
             setTemp = 16
             if(Level != 0):
                 setTemp = int(str(Level).strip("0")) + 16
-            Domoticz.Log("Change Temp to " + str(setTemp) + " for "+unit    ['name'])
+            Domoticz.Log("Change Temp to " + str(setTemp) + " for "+unit['name'])
             current_unit['set_temp'] = self.domoticz_levels['temp'][str(Level)]
-            Devices[Unit].Update(nValue = Devices[Unit].nValue,sValue =  str(Level))
+            Devices[Unit].Update(nValue=Devices[Unit].nValue, sValue=str(Level))
         elif(switch_type == 'Vane Horizontal'):
             flag = 256
             current_unit['vaneH'] = self.domoticz_levels['vaneH'][str(Level)]
-            Domoticz.Debug("Change Vane Horizontal to value {0} for {1}".format(self.domoticz_levels['vaneH'][str(Level)],current_unit['name']))
+            Domoticz.Debug("Change Vane Horizontal to value {0} for {1}".format(self.domoticz_levels['vaneH'][str(Level)], current_unit['name']))
             Devices[Unit].Update(Devices[Unit].nValue, str(Level))
         elif(switch_type == 'Vane Vertical'):
             flag = 16
             current_unit['vaneV'] = self.domoticz_levels['vaneV'][str(Level)]
-            Domoticz.Debug("Change Vane Vertical to value {0} for {1}".format(self.domoticz_levels['vaneV'][str(Level)],current_unit['name']))
+            Domoticz.Debug("Change Vane Vertical to value {0} for {1}".format(self.domoticz_levels['vaneV'][str(Level)], current_unit['name']))
             Devices[Unit].Update(Devices[Unit].nValue, str(Level))
         else:
             Domoticz.Log("Device not found")
-        self.melcloud_set(current_unit,flag)
+        self.melcloud_set(current_unit, flag)
         return True
 
     def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
         Domoticz.Log("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
-    def onDisconnect(self,Connection):
+    def onDisconnect(self, Connection):
         self.melcloud_state = "Not Ready"
         Domoticz.Log("MELCloud has disconnected")
         self.runAgain = 1
 
     def onHeartbeat(self):
-        if (self.melcloud_conn != None and (self.melcloud_conn.Connecting() or self.melcloud_conn.Connected())):
+        if (self.melcloud_conn is not None and (self.melcloud_conn.Connecting() or self.melcloud_conn.Connected())):
             if(self.melcloud_state != "LOGIN_FAILED"):
                 Domoticz.Debug("Current MEL Cloud Key ID:"+str(self.melcloud_key))
                 for unit in self.list_units:
@@ -314,7 +317,7 @@ class BasePlugin:
         else:
             self.runAgain = self.runAgain - 1
             if self.runAgain <= 0:
-                if (self.melcloud_conn == None):
+                if (self.melcloud_conn is None):
                     self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP", Protocol="HTTPS", Address=self.melcloud_baseurl, Port=self.melcloud_port)
                 self.melcloud_conn.Connect()
                 self.runAgain = 6
@@ -332,36 +335,37 @@ class BasePlugin:
                 for switch in self.list_switchs:
                     # Create switchs
                     if switch["typename"] == "Selector Switch":
-                        switch_options = {"LevelNames": switch["levels"],"LevelOffHidden": "false","SelectorStyle": "1"}
-                        Domoticz.Device(Name=device['name']+" - "+switch["name"], Unit=switch["id"]+device['idoffset'], TypeName=switch["typename"], Image=switch["image"], Options=switch_options, Used=1).Create()
+                        switch_options = {"LevelNames": switch["levels"], "LevelOffHidden": "false", "SelectorStyle": "1"}
+                        Domoticz.Device(Name=device['name'] + " - "+switch["name"], Unit=switch["id"]+device['idoffset'],
+                                        TypeName=switch["typename"], Image=switch["image"], Options=switch_options, Used=1).Create()
                     else:
-                        Domoticz.Device(Name=device['name']+" - "+switch["name"], Unit=switch["id"]+device['idoffset'], TypeName=switch["typename"], Used=1).Create()
+                        Domoticz.Device(Name=device['name'] + " - "+switch["name"], Unit=switch["id"]+device['idoffset'],
+                                        TypeName=switch["typename"], Used=1).Create()
 
-    def melcloud_send_data(self,url,values,state):
+    def melcloud_send_data(self, url, values, state):
         if self.melcloud_key is not None:
-            headers = { 'Content-Type': 'application/x-www-form-urlencoded;', \
-                        'Host': self.melcloud_baseurl, \
-                        'User-Agent':'Domoticz/1.0', \
-                        'X-MitsContextKey': self.melcloud_key}
+            headers = {'Content-Type': 'application/x-www-form-urlencoded;',
+                       'Host': self.melcloud_baseurl,
+                       'User-Agent': 'Domoticz/1.0',
+                       'X-MitsContextKey': self.melcloud_key}
             if(state == "SET"):
-                 self.melcloud_conn.Send({'Verb':'POST', 'URL':url,'Headers': headers, 'Data': values})
+                self.melcloud_conn.Send({'Verb': 'POST', 'URL': url, 'Headers': headers, 'Data': values})
             else:
-                 self.melcloud_conn.Send({'Verb':'GET', 'URL':url,'Headers': headers, 'Data': values})
-        else :
-            headers = { 'Content-Type': 'application/x-www-form-urlencoded;', \
-                        'Host': self.melcloud_baseurl, \
-                        'User-Agent':'Domoticz/1.0'}
-            self.melcloud_conn.Send({'Verb':'POST', 'URL':url,'Headers': headers, 'Data': values})
+                self.melcloud_conn.Send({'Verb': 'GET', 'URL': url, 'Headers': headers, 'Data': values})
+        else:
+            headers = {'Content-Type': 'application/x-www-form-urlencoded;',
+                       'Host': self.melcloud_baseurl,
+                       'User-Agent': 'Domoticz/1.0'}
+            self.melcloud_conn.Send({'Verb': 'POST', 'URL': url, 'Headers': headers, 'Data': values})
         self.melcloud_state = state
         return True
 
-
     def melcloud_login(self):
-        data = "AppVersion=1.9.3.0&Email={0}&Password={1}".format(Parameters["Username"],Parameters["Password"])
-        self.melcloud_send_data(self.melcloud_urls["login"],data,"LOGIN")
+        data = "AppVersion=1.9.3.0&Email={0}&Password={1}".format(Parameters["Username"], Parameters["Password"])
+        self.melcloud_send_data(self.melcloud_urls["login"], data, "LOGIN")
         return True
 
-    def melcloud_add_unit(self,device,idoffset):
+    def melcloud_add_unit(self, device, idoffset):
         melcloud_unit = {}
         melcloud_unit['name'] = device["DeviceName"]
         melcloud_unit['id'] = device["DeviceID"]
@@ -380,25 +384,26 @@ class BasePlugin:
         self.list_units.append(melcloud_unit)
 
     def melcloud_units_init(self):
-        self.melcloud_send_data(self.melcloud_urls["list_unit"],None,"UNITS_INIT")
+        self.melcloud_send_data(self.melcloud_urls["list_unit"], None, "UNITS_INIT")
         return True
-    def melcloud_set(self,unit,flag):
-        post_fields = "Power={0}&DeviceID={1}&OperationMode={2}&SetTemperature={3}&SetFanSpeed={4}&VaneHorizontal={5}&VaneVertical={6}&EffectiveFlags={7}&HasPendingCommand=true".format(unit['power'],unit['id'],unit['op_mode'],unit['set_temp'],unit['set_fan'],unit['vaneH'],unit['vaneV'],flag)
+
+    def melcloud_set(self, unit, flag):
+        post_fields = "Power={0}&DeviceID={1}&OperationMode={2}&SetTemperature={3}&SetFanSpeed={4}&VaneHorizontal={5}&VaneVertical={6}&EffectiveFlags={7}&HasPendingCommand=true".format(unit['power'], unit['id'], unit['op_mode'], unit['set_temp'], unit['set_fan'], unit['vaneH'], unit['vaneV'], flag)
         Domoticz.Debug("SET COMMAND SEND {0}".format(post_fields))
-        self.melcloud_send_data(self.melcloud_urls["set_unit"],post_fields,"SET")
+        self.melcloud_send_data(self.melcloud_urls["set_unit"], post_fields, "SET")
 
-    def melcloud_get_unit_info(self,unit):
-        url = self.melcloud_urls["unit_info"]+"?id="+str(unit['id'])+"&buildingID="+str(unit['building_id'])
-        self.melcloud_send_data(url,None,"UNIT_INFO")
+    def melcloud_get_unit_info(self, unit):
+        url = self.melcloud_urls["unit_info"] + "?id=" + str(unit['id']) + "&buildingID=" + str(unit['building_id'])
+        self.melcloud_send_data(url, None, "UNIT_INFO")
 
-    def domoticz_sync_switchs(self,unit):
-        #Default value in case of problem
-        setDomFan = 0;
-        setDomTemp = 0;
-        setDomVaneH = 0;
-        setDomVaneV = 0;
+    def domoticz_sync_switchs(self, unit):
+        # Default value in case of problem
+        setDomFan = 0
+        setDomTemp = 0
+        setDomVaneH = 0
+        setDomVaneV = 0
         if(unit['next_comm'] is not False):
-            Devices[self.list_switchs[6]["id"]+unit["idoffset"]].Update(nValue = 1,sValue = str(unit['next_comm']))
+            Devices[self.list_switchs[6]["id"]+unit["idoffset"]].Update(nValue=1, sValue=str(unit['next_comm']))
         else:
             if(unit['power']):
                 switch_value = 1
@@ -411,60 +416,68 @@ class BasePlugin:
             for level, pic in self.domoticz_levels["mode_pic"].items():
                 if(level == setModeLevel):
                     setPicID = pic
-            Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setModeLevel,Image = setPicID)
+            Devices[self.list_switchs[0]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=setModeLevel, Image=setPicID)
             for level, fan in self.domoticz_levels["fan"].items():
                 if(fan == unit['set_fan']):
                     setDomFan = level
-                    Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomFan)
+                    Devices[self.list_switchs[1]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=setDomFan)
             for level, temp in self.domoticz_levels["temp"].items():
                 if(temp == unit['set_temp']):
                     setDomTemp = level
-                    Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomTemp)
+                    Devices[self.list_switchs[2]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=setDomTemp)
             for level, vaneH in self.domoticz_levels["vaneH"].items():
                 if(vaneH == unit['vaneH']):
                     setDomVaneH = level
-                    Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneH)
+                    Devices[self.list_switchs[3]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=setDomVaneH)
             for level, vaneV in self.domoticz_levels["vaneV"].items():
                 if(vaneV == unit['vaneV']):
                     setDomVaneV = level
-                    Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = setDomVaneV)
-            Devices[self.list_switchs[5]["id"]+unit["idoffset"]].Update(nValue = switch_value,sValue = str(unit['room_temp']))
+                    Devices[self.list_switchs[4]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=setDomVaneV)
+            Devices[self.list_switchs[5]["id"]+unit["idoffset"]].Update(nValue=switch_value, sValue=str(unit['room_temp']))
+
 
 global _plugin
 _plugin = BasePlugin()
+
 
 def onStart():
     global _plugin
     _plugin.onStart()
 
+
 def onStop():
     global _plugin
     _plugin.onStop()
+
 
 def onConnect(Connection, Status, Description):
     global _plugin
     _plugin.onConnect(Connection, Status, Description)
 
+
 def onMessage(Connection, Data):
     global _plugin
     _plugin.onMessage(Connection, Data)
+
 
 def onCommand(Unit, Command, Level, Hue):
     global _plugin
     _plugin.onCommand(Unit, Command, Level, Hue)
 
+
 def onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile):
     global _plugin
     _plugin.onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile)
+
 
 def onDisconnect(Connection):
     global _plugin
     _plugin.onDisconnect(Connection)
 
+
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
-
 
 
 if __name__ == "__main__":
