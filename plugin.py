@@ -464,3 +464,15 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
+
+
+
+if __name__ == "__main__":
+    from Domoticz import Device
+    from Domoticz import Parameters
+    from TestCode import runtest
+    from TestCode import Devices
+    from TestCode import Images
+
+    runtest(BasePlugin())
+    exit(0)
