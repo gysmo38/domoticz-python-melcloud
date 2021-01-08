@@ -213,8 +213,11 @@ class BasePlugin:
                     if(unit['id'] == response['DeviceID']):
                         date, time = response['NextCommunication'].split("T")
                         hours, minutes, sec = time.split(":")
-                        sign = Parameters["Mode1"][0]
-                        value = Parameters["Mode1"][1:]
+                        mode1 = Parameters["Mode1"]
+                        if mode1 == '0':
+                            mode1 = '+0'
+                        sign = mode1[0]
+                        value = mode1[1:]
                         Domoticz.Debug("TIME OFFSSET :" + sign + value)
                         if(sign == "-"):
                             hours = int(hours) - int(value)
