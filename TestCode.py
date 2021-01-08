@@ -5,9 +5,6 @@ from Domoticz import Images
 from Domoticz import Parameters
 
 # your params
-API_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'  # Your api key from Climacell
-LATITUDE = '47.111111'  # Your location
-LONGITUDE = '2.222222'
 
 Parameters['Mode1'] = '0'
 Parameters['Username'] = 'xxxxxxxxxxxxx@xxx.xxx'  # your account mail
