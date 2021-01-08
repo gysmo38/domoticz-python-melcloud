@@ -3,7 +3,7 @@
 # Version: 0.7.7
 #
 # Release Notes:
-# v0.7.7: Add test on domoticz dummy 
+# v0.7.7: Add test on domoticz dummy
 # v0.7.6: Fix Auto Mode added
 # v0.7.5: Fix somes bugs and improve https connection
 # v0.7.4: Sometimes update fail. Update function sync to avoid this
