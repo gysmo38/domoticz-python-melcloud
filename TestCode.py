@@ -24,4 +24,7 @@ def runtest(plugin):
     plugin.onMessage(None, plugin.melcloud_conn.data)
     plugin.onHeartbeat()
     plugin.onMessage(None, plugin.melcloud_conn.data)
+    for unit in plugin.list_units:
+         plugin.melcloud_get_unit_info(unit)
+         plugin.onMessage(None, plugin.melcloud_conn.data)
     plugin.onStop()
