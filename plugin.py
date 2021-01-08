@@ -1,6 +1,6 @@
 # MELCloud Plugin
 # Author:     Gysmo, 2017
-# Version: 0.7.6
+# Version: 0.7.7
 #
 # Release Notes:
 # v0.7.7: Add test on domoticz dummy 
