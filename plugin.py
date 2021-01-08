@@ -160,27 +160,38 @@ class BasePlugin:
                 idoffset = 0
                 Domoticz.Log("Find " + str(len(response)) + " buildings")
                 for building in response:
+                    NrOfDevices = 0
                     Domoticz.Log("Find " + str(len(building["Structure"]["Areas"])) + " areas in building "+building["Name"])
                     Domoticz.Log("Find " + str(len(building["Structure"]["Floors"])) + " floors in building "+building["Name"])
-                    Domoticz.Log("Find " + str(len(building["Structure"]["Devices"])) + " devices  in building "+building["Name"])
                     # Search in devices
                     for device in building["Structure"]["Devices"]:
-                        self.melcloud_add_unit(device, idoffset)
-                        idoffset += len(self.list_switchs)
+                        if(device["Type"] == 0):
+                            self.melcloud_add_unit(device, idoffset)
+                            idoffset += len(self.list_switchs)
+                            NrOfDevices = NrOfDevices + 1
+                    Domoticz.Log("Found "+str(NrOfDevices)+ " devices in building "+building["Name"]+ " of the Type 0 (Aircondition)")
+                    NrOfDevices = 0
                     # Search in areas
                     for area in building["Structure"]["Areas"]:
                         for device in area["Devices"]:
                             self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
+                            NrOfDevices = NrOfDevices + 1
+                    Domoticz.Log("Found "+str(NrOfDevices)+ " devices in areas in "+building["Name"]+ " of the Type 0 (Aircondition)")
+                    NrOfDevices = 0
                     # Search in floors
                     for floor in building["Structure"]["Floors"]:
                         for device in floor["Devices"]:
                             self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
+                            NrOfDevices = NrOfDevices + 1
                         for area in floor["Areas"]:
                             for device in area["Devices"]:
                                 self.melcloud_add_unit(device, idoffset)
                                 idoffset += len(self.list_switchs)
+                                NrOfDevices = NrOfDevices + 1
+                    Domoticz.Log("Found "+str(NrOfDevices)+ " devices in floor in "+building["Name"]+ " of the Type 0 (Aircondition)")
+                    NrOfDevices = 0
                 self.melcloud_create_units()
             elif(self.melcloud_state == "UNIT_INFO"):
                 for unit in self.list_units:
