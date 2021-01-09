@@ -149,17 +149,28 @@ class Device:
         self._unit = Unit
         self._typeName = TypeName
         self._used = Used
-        self._image = None
+        self._type = Type
+        self._subtype = Subtype
+        self._image = Image
+        self._options = Options
 
     def Update(self, nValue=0, sValue='', Options='', Image=None):
         self._nvalue = nValue
         self._svalue = sValue
         self._image = Image
+        txt_log = u'Info - Update device Name : {} nValue : {} sValue : {} Options : {} Image: {}\n'
+        txt_log = txt_log.format(self._name, self._nvalue, self._svalue, self._options, self._image)
+        print(txt_log)
 
     def __str__(self):
         return "0"
 
     def Create(self):
+        txt_log = u'Info - Create device : \n\tName : {}\n\tUnit : {}\n\tTypeName : {}\n\tUsed : {}\n\tType : {}\n\tSubtype : {}'
+        txt_log += u'\n\tImage : {}\n\tOptions : {}'
+        txt_log = txt_log.format(self._name, self._unit, self._typeName,
+                                 self._used, self._type, self._subtype, self._image, self._options)
+        print(txt_log)
         Devices[len(Devices)+1] = self
 
 
