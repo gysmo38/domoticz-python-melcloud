@@ -37,31 +37,31 @@ def runtest(plugin):
     plugin.onHeartbeat()
     plugin.onMessage(None, plugin.melcloud_conn.data)
     for unit in plugin.list_units:
-         plugin.melcloud_get_unit_info(unit)
-         plugin.onMessage(None, plugin.melcloud_conn.data)
-         if False:
-             Data = plugin.melcloud_conn.data
-             Status = int(Data["Status"])
-             if (Status == 200):
-                 strData = Data["Data"].decode("utf-8", "ignore")
-                 response = json.loads(strData)
-                 if(plugin.melcloud_state == "UNIT_INFO"):
-                     print()
-                     print("Update unit {0} information.".format(unit['name']))
-                     # for k, v in unit.items():
-                     #     print("Key: {} Value : {}".format(k, v))
-                     print('')
-                     plugin.domoticz_sync_switchs(unit)
-                     for k, v in response.items():
-                         if k == 'WeatherObservations':
-                             print('WeatherObservations')
-                             for wo in v:
-                                 print()
-                                 for wok, wov in wo.items():
-                                     print("\t{} :\t{}".format(wok, wov))
-                             print()
-                         else:
-                             print("{} :\t{}".format(k, v))
-                     print()
-                     # plugin.onMessage(None, plugin.melcloud_conn.data)
+        plugin.melcloud_get_unit_info(unit)
+        plugin.onMessage(None, plugin.melcloud_conn.data)
+        if False:
+            Data = plugin.melcloud_conn.data
+            Status = int(Data["Status"])
+            if (Status == 200):
+                strData = Data["Data"].decode("utf-8", "ignore")
+                response = json.loads(strData)
+                if(plugin.melcloud_state == "UNIT_INFO"):
+                    print()
+                    print("Update unit {0} information.".format(unit['name']))
+                    if False:
+                        for k, v in unit.items():
+                            print("Key: {} Value : {}".format(k, v))
+                    print('')
+                    plugin.domoticz_sync_switchs(unit)
+                    for k, v in response.items():
+                        if k == 'WeatherObservations':
+                            print('WeatherObservations')
+                            for wo in v:
+                                print()
+                                for wok, wov in wo.items():
+                                    print("\t{} :\t{}".format(wok, wov))
+                            print()
+                        else:
+                            print("{} :\t{}".format(k, v))
+                    print()
     plugin.onStop()
