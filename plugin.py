@@ -93,6 +93,7 @@ class BasePlugin:
     melcloud_urls["unit_info"] = "/Mitsubishi.Wifi.Client/Device/Get"
 
     list_units = []
+    dict_devices = {}
 
     list_switchs = []
     list_switchs.append({"id": 1, "name": "Mode", "typename": "Selector Switch",
@@ -146,6 +147,15 @@ class BasePlugin:
         else:
             Domoticz.Log("MELCloud connection FAIL: "+Description)
 
+    def extractDeviceData(self, device):
+        if device['DeviceName'] not in self.dict_devices.keys():
+            self.dict_devices['DeviceName'] = device
+            # print('\n---device\n', device, '\n---\n')
+            if 'HasEnergyConsumedMeter' in device['Device'].keys():
+                return device['Device']['CurrentEnergyConsumed']/1000
+            else:
+                return 0
+
     def onMessage(self, Connection, Data):
         Status = int(Data["Status"])
         if Status == 200:
@@ -153,7 +163,7 @@ class BasePlugin:
             response = json.loads(strData)
             Domoticz.Debug("JSON REPLY: "+str(response))
             if self.melcloud_state == "LOGIN":
-                if response["ErrorId"] is None:
+                if ("ErrorId" not in response.keys()) or (response["ErrorId"] is None):
                     Domoticz.Log("MELCloud login successfull")
                     self.melcloud_key = response["LoginData"]["ContextKey"]
                     self.melcloud_units_init()
@@ -174,34 +184,63 @@ class BasePlugin:
                     Domoticz.Log("Find " + str(len(building["Structure"]["Floors"])) +
                                  " floors in building "+building["Name"])
                     # Search in devices
+                    cEnergyConsumed = 0
                     for device in building["Structure"]["Devices"]:
                         if device["Type"] == 0:
                             self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
                             nr_of_devices = nr_of_devices + 1
-                    Domoticz.Log("Found " + str(nr_of_devices) + " devices in building " +
-                                 building["Name"] + " of the Type 0 (Aircondition)")
+                            currentEnergyConsumed = self.extractDeviceData(device)
+                            cEnergyConsumed += currentEnergyConsumed
+                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
+                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
+                            Domoticz.Log(text2log)
+                    text2log = "Found {} devices in building {} of the Type 0 (Aircondition)" +\
+                               " CurrentEnergyConsumed {:.0f} kWh"
+                    text2log = text2log.format(str(nr_of_devices), building["Name"],
+                                               cEnergyConsumed)
+                    Domoticz.Log(text2log)
                     nr_of_devices = 0
                     # Search in areas
+                    cEnergyConsumed = 0
                     for area in building["Structure"]["Areas"]:
                         for device in area["Devices"]:
                             self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
                             nr_of_devices = nr_of_devices + 1
+                            self.extractDeviceData(device)
+                            currentEnergyConsumed = self.extractDeviceData(device)
+                            cEnergyConsumed += currentEnergyConsumed
+                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
+                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
+                            Domoticz.Log(text2log)
                     Domoticz.Log("Found " + str(nr_of_devices) + " devices in areas in " +
                                  building["Name"] + " of the Type 0 (Aircondition)")
                     nr_of_devices = 0
                     # Search in floors
+                    cEnergyConsumed = 0
                     for floor in building["Structure"]["Floors"]:
                         for device in floor["Devices"]:
                             self.melcloud_add_unit(device, idoffset)
                             idoffset += len(self.list_switchs)
                             nr_of_devices = nr_of_devices + 1
+                            self.extractDeviceData(device)
+                            currentEnergyConsumed = self.extractDeviceData(device)
+                            cEnergyConsumed += currentEnergyConsumed
+                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
+                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
+                            Domoticz.Log(text2log)
                         for area in floor["Areas"]:
                             for device in area["Devices"]:
                                 self.melcloud_add_unit(device, idoffset)
                                 idoffset += len(self.list_switchs)
                                 nr_of_devices = nr_of_devices + 1
+                                self.extractDeviceData(device)
+                                currentEnergyConsumed = self.extractDeviceData(device)
+                                cEnergyConsumed += currentEnergyConsumed
+                                text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
+                                text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
+                                Domoticz.Log(text2log)
                     Domoticz.Log("Found " + str(nr_of_devices) + " devices in floor in " +
                                  building["Name"] + " of the Type 0 (Aircondition)")
                     nr_of_devices = 0
@@ -384,6 +423,7 @@ class BasePlugin:
                                         TypeName=switch["typename"], Used=1).Create()
 
     def melcloud_send_data(self, url, values, state):
+        self.melcloud_state = state
         if self.melcloud_key is not None:
             headers = {'Content-Type': 'application/x-www-form-urlencoded;',
                        'Host': self.melcloud_baseurl,
@@ -398,7 +438,6 @@ class BasePlugin:
                        'Host': self.melcloud_baseurl,
                        'User-Agent': 'Domoticz/1.0'}
             self.melcloud_conn.Send({'Verb': 'POST', 'URL': url, 'Headers': headers, 'Data': values})
-        self.melcloud_state = state
         return True
 
     def melcloud_login(self):
