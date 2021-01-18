@@ -152,9 +152,6 @@ class BasePlugin:
             self.dict_devices['DeviceName'] = device
             # print('\n---device\n', device, '\n---\n')
             if 'HasEnergyConsumedMeter' in device['Device'].keys():
-                # print('{}: {} kWh ({})'.format('CurrentEnergyConsumed',
-                                               # device['Device']['CurrentEnergyConsumed']/1000,
-                                               # device['DeviceName']))
                 return device['Device']['CurrentEnergyConsumed']/1000
             else:
                 return 0
@@ -167,7 +164,6 @@ class BasePlugin:
             Domoticz.Debug("JSON REPLY: "+str(response))
             if self.melcloud_state == "LOGIN":
                 if ("ErrorId" not in response.keys()) or (response["ErrorId"] is None):
-                # if response["ErrorId"] is None:
                     Domoticz.Log("MELCloud login successfull")
                     self.melcloud_key = response["LoginData"]["ContextKey"]
                     self.melcloud_units_init()
