@@ -121,6 +121,7 @@ class Connection:
 
 
 class Device:
+    global Devices
 
     @property
     def nValue(self):
@@ -140,18 +141,26 @@ class Device:
 
     @property
     def ID(self):
-        return self._sValue
+        return self._id
 
     @ID.setter
     def ID(self, value):
-        self._sValue = value
+        self._id = value
+
+    @property
+    def DeviceID(self):
+        return self._device_id
+
+    @DeviceID.setter
+    def DeviceID(self, value):
+        self._device_id = value
 
     @property
     def Typename(self):
         return self._typeName
 
     @Typename.setter
-    def ID(self, value):
+    def Typename(self, value):
         self._typeName = value
 
     @property
@@ -159,7 +168,7 @@ class Device:
         return self._name
 
     @Name.setter
-    def ID(self, value):
+    def Name(self, value):
         self._name = value
 
     @property
@@ -171,7 +180,7 @@ class Device:
         return self._image
 
     @Image.setter
-    def ID(self, value):
+    def Image(self, value):
         self._image = value
 
     def __init__(self, Name="", Unit=0, TypeName="", Used=0, Type=0, Subtype=0, Image="", Options=""):
@@ -185,6 +194,9 @@ class Device:
         self._subtype = Subtype
         self._image = Image
         self._options = Options
+        self._id = len(Devices.keys()) + 101
+        self._device_id = len(Devices.keys()) + 4001
+        print(u'ID: {}'.format(self._id))
 
     def Update(self, nValue=0, sValue='', Options='', Image=None):
         self._nvalue = nValue
@@ -199,12 +211,15 @@ class Device:
         return txt_log
 
     def Create(self):
+        self._id = len(Devices.keys()) + 101
+        self._device_id = len(Devices.keys()) + 4001
         txt_log = u'Info - Create device : \n\tName : {}\n\tUnit : {}\n\tTypeName : {}\n\tUsed : {}\n\tType : {}\n\tSubtype : {}'
         txt_log += u'\n\tImage : {}\n\tOptions : {}'
         txt_log = txt_log.format(self._name, self._unit, self._typeName,
                                  self._used, self._type, self._subtype, self._image, self._options)
         print(txt_log)
-        Devices[len(Devices)+1] = self
+        Devices[len(Devices.keys())] = self
+        print(u'ID: {}'.format(self._id))
 
 
 class Image:
