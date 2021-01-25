@@ -5,10 +5,12 @@ import chardet
 Parameters = {"Mode5": "Debug"}
 Devices = {}
 Images = {}
+debug_Level = 0
 
 
 def Debug(textStr):
-    print(u'Debug : {}'.format(textStr))
+    if debug_Level >= 62:
+        print(u'Debug : {}'.format(textStr))
 
 
 def Error(textStr):
@@ -255,3 +257,13 @@ class Image:
 
     def Create(self):
         Images[self._filename.split(u' ')[0]] = self
+
+
+def Debugging(level):
+    global debug_Level
+    debug_Level = int(level)
+    print(u'debug_Level: {}'.format(debug_Level))
+
+
+def Heartbeat(value):
+    pass

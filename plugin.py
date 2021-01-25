@@ -133,6 +133,8 @@ class BasePlugin:
         self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP",
                                                  Protocol="HTTPS", Address=self.melcloud_baseurl,
                                                  Port=self.melcloud_port)
+        if __name__ == "__main__":
+            self.melcloud_conn.bp = self
         self.melcloud_conn.Connect()
         return True
 
