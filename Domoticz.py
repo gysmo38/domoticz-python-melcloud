@@ -26,7 +26,9 @@ def Log(textStr):
 
 
 def Debugging(value):
-    pass
+    global debug_Level
+    debug_Level = int(value)
+    Log(u'debug_Level: {}'.format(debug_Level))
 
 
 def Heartbeat(value):
@@ -66,7 +68,7 @@ class Connection:
         self._bp = None
 
     def Connect(self):
-        print(self._requestUrl)
+        Debug(u'requestUrl: {}'.format(self._requestUrl))
         self._bp.onConnect('Connection', 0, 'Description')
         return None
 
@@ -77,42 +79,31 @@ class Connection:
         return True
 
     def Send(self, params):
-        # print('\n\n--bp status\n', self.bp.melcloud_state, '\n--\n')
-        # print('\n\n--Send params\n', params, '\n--\n')
-        # onMessage(self, Connection, Data)
         params['Headers']['accept'] = 'application/json'
-        # print('Send')
         if params['Verb'] == 'POST':
             url = u'{}/{}'.format(self._requestUrl, params['URL'])
-            # print(u'Verb POST url: {}:/{}'.format(self._ptrotocol, params['URL']))
             r = requests.post(url, data=params['Data'], headers=params['Headers'])
 
             # build onMessage params
             data = {}
             data["Status"] = r.status_code
             data["Data"] = bytes(json.dumps(r.json()), 'utf-8')
-            # print('\n\n--POST\n', data, '\n--\n')
 
             r.encoding = 'utf-8'
             self._data = {}
             self._data["Status"] = r.status_code
             self._data["Data"] = bytes(json.dumps(r.json()), 'utf-8')
 
-            # print('\n\n--data\n', data, '\n--\n')
             self.bp.onMessage(self, data)
             return
         elif params['Verb'] == 'GET':
-            # print(u'Verb GET')
             url = u'{}/{}'.format(self._requestUrl, params['URL'])
-            # print(u'Verb GET url: {}:/{}'.format(self._ptrotocol, params['URL']))
             r = requests.get(url, data=params['Data'], headers=params['Headers'])
 
             # build onMessage params and onMessage call
             data = {}
             data["Status"] = r.status_code
-            # print('\n\n--rJSON\n', r.json(), '\n--\n')
             data["Data"] = bytes(json.dumps(r.json()), 'utf-8')
-            # print('\n\n--GET\n', data, '\n--\n')
             self.bp.onMessage(self, data)
 
             r.encoding = 'utf-8'
@@ -198,14 +189,14 @@ class Device:
         self._options = Options
         self._id = len(Devices.keys()) + 101
         self._device_id = len(Devices.keys()) + 4001
-        print(u'ID: {}'.format(self._id))
+        Debug(u'ID: {}'.format(self._id))
 
     def Update(self, nValue=0, sValue='', Options='', Image=None):
         self._nvalue = nValue
         self._svalue = sValue
         self._image = Image
         txt_log = self.__str__()
-        print(txt_log)
+        Log(txt_log)
 
     def __str__(self):
         txt_log = u'Info - Update device Name : {} nValue : {} sValue : {} Options : {} Image: {}\n'
@@ -219,9 +210,9 @@ class Device:
         txt_log += u'\n\tImage : {}\n\tOptions : {}'
         txt_log = txt_log.format(self._name, self._unit, self._typeName,
                                  self._used, self._type, self._subtype, self._image, self._options)
-        print(txt_log)
+        Log(txt_log)
         Devices[len(Devices.keys())] = self
-        print(u'ID: {}'.format(self._id))
+        Debug(u'ID: {}'.format(self._id))
 
 
 class Image:
@@ -257,13 +248,3 @@ class Image:
 
     def Create(self):
         Images[self._filename.split(u' ')[0]] = self
-
-
-def Debugging(level):
-    global debug_Level
-    debug_Level = int(level)
-    print(u'debug_Level: {}'.format(debug_Level))
-
-
-def Heartbeat(value):
-    pass
