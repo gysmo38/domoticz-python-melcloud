@@ -3,7 +3,7 @@
 1. Clone repository into your domoticz plugins folder
 ```
 cd domoticz/plugins
-git clone https://github.com/afer92/domoticz-python-melcloud.git Melcloud
+git clone https://github.com/gysmo38/domoticz-python-melcloud.git
 ```
 2. Restart domoticz
 3. Make sure that "Accept new Hardware Devices" is enabled in Domoticz settings
@@ -18,7 +18,7 @@ git pull
 1. Clone repository
 ```
 cd scripts/tests
-git clone https://github.com/afer92/domoticz-python-melcloud.git Melcloud
+git clone https://github.com/gysmo38/domoticz-python-melcloud.git
 ```
 2. Edit TestCode.py
 ```
