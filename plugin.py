@@ -3,6 +3,7 @@
 # Version: 0.7.7
 #
 # Release Notes:
+# v0.7.8: Code optimization
 # v0.7.7: Add test on domoticz dummy
 # v0.7.6: Fix Auto Mode added
 # v0.7.5: Fix somes bugs and improve https connection
@@ -24,7 +25,7 @@
 #        Usefull if you use your Mitsubishi remote
 # v0.1 : Initial release
 """
-<plugin key="MELCloud" version="0.7.7" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
+<plugin key="MELCloud" version="0.7.8" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
     <params>
         <param field="Username" label="Email" width="200px" required="true" />
         <param field="Password" label="Password" width="200px" required="true" />
@@ -133,6 +134,8 @@ class BasePlugin:
         self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP",
                                                  Protocol="HTTPS", Address=self.melcloud_baseurl,
                                                  Port=self.melcloud_port)
+        if __name__ == "__main__":
+            self.melcloud_conn.bp = self
         self.melcloud_conn.Connect()
         return True
 
@@ -156,6 +159,51 @@ class BasePlugin:
             else:
                 return 0
 
+    def searchUnits(self, building, scope, idoffset):
+        # building["Structure"]["Devices"]
+        # building["Structure"]["Areas"]
+        # building["Structure"]["Floors"]
+        nr_of_Units = 0
+        cEnergyConsumed = 0
+        # Search in scope
+
+        def oneUnit(self, device, idoffset, nr_of_Units, cEnergyConsumed, building, scope):
+            self.melcloud_add_unit(device, idoffset)
+            idoffset += len(self.list_switchs)
+            nr_of_Units += 1
+            self.extractDeviceData(device)
+            currentEnergyConsumed = self.extractDeviceData(device)
+            cEnergyConsumed += currentEnergyConsumed
+            text2log = "Found {} in building {} {} CurrentEnergyConsumed {} kWh"
+            text2log = text2log.format(device['DeviceName'],
+                                       building["Name"],
+                                       scope, currentEnergyConsumed)
+            Domoticz.Log(text2log)
+            return (nr_of_Units, idoffset, cEnergyConsumed)
+
+        for item in building["Structure"][scope]:
+            if scope == u'Devices':
+                if item["Type"] == 0:
+                    (nr_of_Units, idoffset, cEnergyConsumed) = oneUnit(self, item, idoffset,
+                                                                       nr_of_Units, cEnergyConsumed,
+                                                                       building, scope)
+            elif scope in (u'Areas', u'Floors'):
+                for device in item["Devices"]:
+                    (nr_of_Units, idoffset, cEnergyConsumed) = oneUnit(self, device, idoffset,
+                                                                       nr_of_Units, cEnergyConsumed,
+                                                                       building, scope)
+                if scope == u'Floors':
+                    for device in item["Areas"]:
+                        (nr_of_Units, idoffset, cEnergyConsumed) = oneUnit(self, device, idoffset,
+                                                                   nr_of_Units, cEnergyConsumed,
+                                                                   building, scope)
+                
+        text2log = u'Found {} devices in building {} {} of the Type 0 (Aircondition) CurrentEnergyConsumed {:.0f} kWh'
+        text2log = text2log.format(str(nr_of_Units), building["Name"], scope, cEnergyConsumed)
+        Domoticz.Log(text2log)
+        
+        return (nr_of_Units, idoffset, cEnergyConsumed)
+
     def onMessage(self, Connection, Data):
         Status = int(Data["Status"])
         if Status == 200:
@@ -178,72 +226,16 @@ class BasePlugin:
                 idoffset = 0
                 Domoticz.Log("Find " + str(len(response)) + " buildings")
                 for building in response:
-                    nr_of_devices = 0
                     Domoticz.Log("Find " + str(len(building["Structure"]["Areas"])) +
                                  " areas in building "+building["Name"])
                     Domoticz.Log("Find " + str(len(building["Structure"]["Floors"])) +
                                  " floors in building "+building["Name"])
                     # Search in devices
-                    cEnergyConsumed = 0
-                    for device in building["Structure"]["Devices"]:
-                        if device["Type"] == 0:
-                            self.melcloud_add_unit(device, idoffset)
-                            idoffset += len(self.list_switchs)
-                            nr_of_devices = nr_of_devices + 1
-                            currentEnergyConsumed = self.extractDeviceData(device)
-                            cEnergyConsumed += currentEnergyConsumed
-                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
-                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
-                            Domoticz.Log(text2log)
-                    text2log = "Found {} devices in building {} of the Type 0 (Aircondition)" +\
-                               " CurrentEnergyConsumed {:.0f} kWh"
-                    text2log = text2log.format(str(nr_of_devices), building["Name"],
-                                               cEnergyConsumed)
-                    Domoticz.Log(text2log)
-                    nr_of_devices = 0
+                    (nr_of_Units, idoffset, cEnergyConsumed) = self.searchUnits(building, "Devices", idoffset)
                     # Search in areas
-                    cEnergyConsumed = 0
-                    for area in building["Structure"]["Areas"]:
-                        for device in area["Devices"]:
-                            self.melcloud_add_unit(device, idoffset)
-                            idoffset += len(self.list_switchs)
-                            nr_of_devices = nr_of_devices + 1
-                            self.extractDeviceData(device)
-                            currentEnergyConsumed = self.extractDeviceData(device)
-                            cEnergyConsumed += currentEnergyConsumed
-                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
-                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
-                            Domoticz.Log(text2log)
-                    Domoticz.Log("Found " + str(nr_of_devices) + " devices in areas in " +
-                                 building["Name"] + " of the Type 0 (Aircondition)")
-                    nr_of_devices = 0
+                    (nr_of_Units, idoffset, cEnergyConsumed) = self.searchUnits(building, "Areas", idoffset)
                     # Search in floors
-                    cEnergyConsumed = 0
-                    for floor in building["Structure"]["Floors"]:
-                        for device in floor["Devices"]:
-                            self.melcloud_add_unit(device, idoffset)
-                            idoffset += len(self.list_switchs)
-                            nr_of_devices = nr_of_devices + 1
-                            self.extractDeviceData(device)
-                            currentEnergyConsumed = self.extractDeviceData(device)
-                            cEnergyConsumed += currentEnergyConsumed
-                            text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
-                            text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
-                            Domoticz.Log(text2log)
-                        for area in floor["Areas"]:
-                            for device in area["Devices"]:
-                                self.melcloud_add_unit(device, idoffset)
-                                idoffset += len(self.list_switchs)
-                                nr_of_devices = nr_of_devices + 1
-                                self.extractDeviceData(device)
-                                currentEnergyConsumed = self.extractDeviceData(device)
-                                cEnergyConsumed += currentEnergyConsumed
-                                text2log = "Found {} in building {} CurrentEnergyConsumed {} kWh"
-                                text2log = text2log.format(device['DeviceName'], building["Name"], currentEnergyConsumed)
-                                Domoticz.Log(text2log)
-                    Domoticz.Log("Found " + str(nr_of_devices) + " devices in floor in " +
-                                 building["Name"] + " of the Type 0 (Aircondition)")
-                    nr_of_devices = 0
+                    (nr_of_Units, idoffset, cEnergyConsumed) = self.searchUnits(building, "Floors", idoffset)
                 self.melcloud_create_units()
             elif self.melcloud_state == "UNIT_INFO":
                 for unit in self.list_units:
