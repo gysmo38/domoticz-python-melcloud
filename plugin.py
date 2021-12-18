@@ -28,7 +28,7 @@
 <plugin key="MELCloud" version="0.7.8" name="MELCloud plugin" author="gysmo" wikilink="http://www.domoticz.com/wiki/Plugins/MELCloud.html" externallink="http://www.melcloud.com">
     <params>
         <param field="Username" label="Email" width="200px" required="true" />
-        <param field="Password" label="Password" width="200px" required="true" />
+        <param field="Password" label="Password" width="200px" required="true" password="true"/>
         <param field="Mode1" label="GMT Offset" width="75 px">
             <options>
                 <option label="-12" value="-12"/>
@@ -388,9 +388,9 @@ class BasePlugin:
         else:
             self.runAgain = self.runAgain - 1
             if self.runAgain <= 0:
-                if self.melcloud_conn is None:
-                    self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP", Protocol="HTTPS",
-                                                             Address=self.melcloud_baseurl, Port=self.melcloud_port)
+                self.melcloud_conn = Domoticz.Connection(Name="MELCloud", Transport="TCP/IP", Protocol="HTTPS",
+                                                         Address=self.melcloud_baseurl, Port=self.melcloud_port)
+                self.melcloud_key = None
                 self.melcloud_conn.Connect()
                 self.runAgain = 6
             else:
